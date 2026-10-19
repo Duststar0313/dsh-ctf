@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "recommendedHost": "0.2.0-rc.2",
+  "supportedHosts": [
+    {
+      "version": "0.2.0-rc.2",
+      "track": "recommended"
+    }
+  ],
+  "notes": [
+    "The bundle only uses patch-layer syntax (`insert:`), the `skills` provider seam and packages shipped with the host.",
+    "`dsh-ctf` has no runtime dependencies: it imports `node:` builtins only."
+  ]
+}

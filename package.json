@@ -1,0 +1,47 @@
+{
+  "name": "dsh-ctf",
+  "version": "0.1.0",
+  "description": "CTF capability for DeepSeek Harness: a `ctf` agent preset plus the 13-skill CTF library (routing layer, 9 directions, match ops, writeup), shipped as one installable plugin.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./compatibility.json": "./compatibility.json",
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Duststar0313",
+    "url": "https://github.com/Duststar0313"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Duststar0313/dsh-ctf.git"
+  },
+  "homepage": "https://github.com/Duststar0313/dsh-ctf#readme",
+  "bugs": {
+    "url": "https://github.com/Duststar0313/dsh-ctf/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "ctf",
+    "capture-the-flag",
+    "skills",
+    "agent-preset"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "verify": "node scripts/verify-plugin.mjs",
+    "test": "python3 -m pytest -q"
+  }
+}
