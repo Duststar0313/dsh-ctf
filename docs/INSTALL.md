@@ -25,6 +25,28 @@ dsh web                       # restart the app
 dsh --profile web --dump-config | grep -c 'id: preset-ctf'   # expect 1
 ```
 
+### If `github.com:443` is blocked, or the repo is private
+
+pnpm resolves git-hosted dependencies over **HTTPS** even when the specifier says `git+ssh://` — it has to
+record a URL that works on every machine reading the lockfile. On a host that can only reach GitHub over
+SSH, that rewrite fails with:
+
+```
+git ls-remote failed: fatal: could not read Username for 'https://github.com': terminal prompts disabled
+```
+
+Teach git to substitute the transport locally (the recorded URL stays untouched):
+
+```bash
+git config --global url."git@github.com:".insteadOf "https://github.com/"
+dsh plugin --profile web add "git+ssh://git@github.com/Duststar0313/dsh-ctf.git"
+```
+
+Verified end to end: `dsh plugin add` installs `dsh-ctf 0.1.0` into the profile, reconciles
+`dsh.profile.bundles`, composes the layer, and the provider discovers all 13 skills from
+`node_modules/dsh-ctf`. No build step runs — the package has no dependencies and no `prepare` script, so
+pnpm's `allowBuilds` gate never applies.
+
 ## 2. From a local checkout
 
 ```bash

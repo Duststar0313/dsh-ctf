@@ -91,6 +91,7 @@ bash scripts/install_ctf_tools.sh crypto    # 只装一个方向
 | `a skill provider named "ctf-bundle" is already registered` | 同一作用域挂了两份；留一份，或在 `ctf-skills` 行改 `providerName` |
 | 技能内容偏旧 | `~/.dsh/skills` 里的旧副本（rank 400）赢了 —— 删掉 |
 | `spawn pnpm ENOENT` | `dsh plugin` 依赖 `PATH` 里的 pnpm |
+| `could not read Username for 'https://github.com'` | pnpm 会把 git 依赖按 HTTPS 解析，即使写的是 `git+ssh://` —— 加 `git config --global url."git@github.com:".insteadOf "https://github.com/"`，见[从 git 安装](docs/INSTALL.md#1-from-git-recommended) |
 | preset 列表里没有「CTF 解题」 | bundle 没进 `dsh.profile.bundles`；装完要重启应用 |
 
 ## 来源与许可
