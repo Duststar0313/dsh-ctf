@@ -67,6 +67,8 @@ go install github.com/ffuf/ffuf/v2@latest
 - [python-requests.md](python-requests.md) - Python requests toolkit: session scaffold, Burp-Intruder-like fuzzer (sync + ThreadPoolExecutor + httpx async), payload deploy from pat-reference.md wordlists, header/param spray, cookie/JWT, proxy
 - [pat-reference.md](pat-reference.md) — PayloadsAllTheThings index: bulk payloads for XSS/SQLi/SSRF/SSTI/LFI/Command Injection/Upload (requires PAT clone, see Prerequisites)
 - [ai-agentic-web.md](ai-agentic-web.md) — LLM agent web attack surface: tool-argument injection, MCP abuse, browser-agent hijacking, agent memory/context poisoning, agent-as-SSRF, confused deputy tool privilege diffusion
+- [client-side-browser-isolation.md](client-side-browser-isolation.md) — cross-origin isolation primitives (COOP/COEP/CORP/credentialless, PNA preflight & browser SSRF, fenced frames, double-keyed cache) and the XS-Leak playbook for leaking login state / resource existence when direct XSS is not possible
+- [modern-protocols.md](modern-protocols.md) — gRPC/protobuf (reflection enumeration, parse divergence, metadata header injection), serverless/FaaS (IMDS/metadata probing, env & artifact abuse), HTTP/3 (QUIC) hints, WebSocket CSWSH/smuggling supplement
 
 ## When to Pivot
 

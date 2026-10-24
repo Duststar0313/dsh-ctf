@@ -8,6 +8,7 @@
 - [De Bruijn Sequence for Substring Coverage (BearCatCTF 2026)](#de-bruijn-sequence-for-substring-coverage-bearcatctf-2026)
 - [Brainfuck Interpreter Instrumentation (BearCatCTF 2026)](#brainfuck-interpreter-instrumentation-bearcatctf-2026)
 - [WASM Linear Memory Manipulation (BearCatCTF 2026)](#wasm-linear-memory-manipulation-bearcatctf-2026)
+- [Headless Browser Automation](#headless-browser-automation)
 - [References](#references)
 
 ---
@@ -237,6 +238,38 @@ const result = instance.exports.flipCoin();
 **Key insight:** Unlike WAT patching (modifying the binary), memory manipulation patches runtime state after loading. All WASM variables live in flat linear memory at fixed offsets. Use `wasm-objdump -x game.wasm` or search for known constants to find variable offsets. No need to understand the full game logic — just set the state to "about to win".
 
 **Detection:** WASM game requiring statistically impossible sequences (streaks, perfect scores). Game logic is in `.wasm` file loadable in Node.js.
+
+---
+
+## Headless Browser Automation
+
+**Pattern (Playwright/puppeteer/bot challenges):** The challenge says "visit this page / automate the browser to get the flag", or ships a headless-browser script that must be adapted — the goal is legitimate page interaction, not exploitation.
+
+**Tool choice:**
+
+| Tool | When |
+|---|---|
+| Playwright | Default — Python + Node APIs, auto-waiting, screenshots, request interception; best for CTF scripting |
+| Puppeteer | Node-only; pick it when the challenge bot is already written in it |
+| Selenium | WebDriver standard; heavier (separate driver binary); only when the challenge expects it or needs a profile/real browser |
+
+**Basic skeleton (Playwright, Python):**
+```python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+    page.goto("https://target/")
+    page.fill('input[name="flag"]', "candidate")
+    page.click("button#submit")
+    print(page.evaluate("document.body.innerText"))  # or read the flag element
+    browser.close()
+```
+
+**Attack surface:** JS anti-automation checks (`navigator.webdriver`, `chrome.runtime`, plugin enumeration) → strip via `page.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined})")`; JS "prove you are a browser" challenges → run the challenge code inside `page.evaluate` and return the result; CAPTCHAs / timed interactions → drive the real page and let it solve itself, or slow down with waits.
+
+**Boundary with ctf-web:** pure automation-to-flag (clicking through a game, solving a JS proof, timed actions) is **misc**; once the page becomes an exploitation target (XSS/SQLi/SSTI/SSRF in the app or in its bot), route to `ctf-web`. For the *attacking* browser-agent workflow see `ctf-web/ai-agentic-web.md` — this section is about writing your own automation script.
 
 ---
 

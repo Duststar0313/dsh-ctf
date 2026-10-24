@@ -26,6 +26,7 @@ For advanced GDB scripting, Ghidra automation, patching frameworks, and GDB-driv
 - [Rizin / Cutter](#rizin--cutter)
 - [RetDec (Retargetable Decompiler)](#retdec-retargetable-decompiler)
 - [Custom VM Bytecode Lifting to LLVM IR (Google CTF 2017)](#custom-vm-bytecode-lifting-to-llvm-ir-google-ctf-2017)
+- [MLIR and Modern LLVM Passes](#mlir-and-modern-llvm-passes)
 
 ---
 
@@ -405,3 +406,28 @@ For complex custom VMs, transpile the VM bytecode to LLVM IR and use LLVM's opti
 ```
 
 **Key insight:** LLVM's optimization passes (inlining, constant folding, dead code elimination) dramatically simplify lifted VM bytecode. A custom VM with 26 registers and 3 opcodes that produces 1300 lines of IL reduces to ~150 lines after `-O3`, revealing the underlying algorithm (e.g., Collatz sequence computation).
+
+---
+
+## MLIR and Modern LLVM Passes
+
+MLIR (Multi-Level Intermediate Representation) is LLVM's framework for multi-level IR: dialects such as `arith.`, `tensor.`, `linalg.`, `func.`, `tosa.` sit above plain LLVM IR. CTF sightings are still rare but growing — a handed-out `.mlir` file, or a binary/artifact carrying MLIR compilation traces (IREE, TVM, oneDNN, TensorFlow Lite pipelines).
+
+**Recognition:** a text `.mlir` usually starts with `module {` / `builtin.module`; instructions carry dialect prefixes (`arith.addi`, `tensor.extract`, `linalg.matmul`).
+
+```bash
+# Standard MLIR tools come from an LLVM build with MLIR enabled (also: pip install mlir — availability varies)
+mlir-opt --pass-pipeline='builtin.module(func.func(canonicalize, cse))' in.mlir -o out.mlir
+mlir-translate --mlir-to-llvmir in.mlir -o out.ll     # MLIR -> LLVM IR
+tosa-opt --pass-pipeline='tosa-to-linalg' in.mlir     # TOSA dialect tool; exact pass names vary by version — check `tosa-opt --help`
+```
+
+**Modern LLVM pass deobfuscation:** `opt`'s new pass manager uses `-passes='a,b,c'` instead of the legacy `-instcombine`-style names:
+
+```bash
+opt -passes='strip,instcombine,simplifycfg' -S obfuscated.ll -o cleaned.ll
+# combos that recur in CTF writeups: strip (drop symbols), instcombine (peephole + MBA simplification),
+# simplifycfg (dead code + CFG cleanup), mem2reg, gvn, aggressive-instcombine
+```
+
+**Related LLVM content:** `llc` / LLVM IR→assembly basics live in [tools.md](tools.md#llvm-ir); lifting custom VM bytecode to LLVM IR and simplifying it with `opt` is covered above in [Custom VM Bytecode Lifting](#custom-vm-bytecode-lifting-to-llvm-ir-google-ctf-2017).

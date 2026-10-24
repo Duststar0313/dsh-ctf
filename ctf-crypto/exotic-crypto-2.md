@@ -1,6 +1,6 @@
 # CTF Crypto - Exotic Algebraic Structures (Part 2)
 
-Covers 2017+ era exotic crypto attacks (BB-84 QKD, ElGamal variants, Paillier oracles, differential privacy, homomorphic bit extraction, Jordan normal form, OSS forgery, Cayley-Purser, BIP39 brute, Asmuth-Bloom, Rabin polynomial primes, LCG period, Vandermonde recovery). For Part 1 foundational exotic structures, see [exotic-crypto.md](exotic-crypto.md).
+Covers 2017+ era exotic crypto attacks (BB-84 QKD, ElGamal variants, Paillier oracles, differential privacy, homomorphic bit extraction, Jordan normal form, OSS forgery, Cayley-Purser, BIP39 brute, Asmuth-Bloom, Rabin polynomial primes, LCG period, Vandermonde recovery, FHE recognition). For Part 1 foundational exotic structures, see [exotic-crypto.md](exotic-crypto.md).
 
 ## Table of Contents
 - [BB-84 Quantum Key Distribution MITM Attack (PlaidCTF 2017)](#bb-84-quantum-key-distribution-mitm-attack-plaidctf-2017)
@@ -17,6 +17,7 @@ Covers 2017+ era exotic crypto attacks (BB-84 QKD, ElGamal variants, Paillier or
 - [LCG Period Detection for Unlimited Output Prediction (X-MAS 2018)](#lcg-period-detection-for-unlimited-output-prediction-x-mas-2018)
 - [Polynomial Coefficient Recovery via Vandermonde Linear System (X-MAS 2018)](#polynomial-coefficient-recovery-via-vandermonde-linear-system-x-mas-2018)
 - [Rabin Decryption via Four-Roots CRT Combination (Pragyan CTF 2019)](#rabin-decryption-via-four-roots-crt-combination-pragyan-ctf-2019)
+- [Fully Homomorphic Encryption (FHE) Recognition](#fully-homomorphic-encryption-fhe-recognition)
 
 ---
 
@@ -419,4 +420,33 @@ for cand in (r1, r2, s1, s2):
 ```
 
 **Key insight:** Rabin decryption inherently produces four candidates because `x^2 ≡ c mod n` has four roots mod `n = p*q`. When `p, q ≡ 3 mod 4`, per-prime roots are the closed-form exponentiation `c^((p+1)/4) mod p` — no Tonelli-Shelanks needed. Combine with Bezout coefficients `yp*p + yq*q = 1` to get the four CRT candidates `±(yp*p*mq ± yq*q*mp) mod n`, and select by plaintext sanity (ASCII, magic bytes, known prefix). The four-root ambiguity is why Rabin typically needs redundancy in the plaintext to be useful as a cryptosystem.
+
+---
+
+## Fully Homomorphic Encryption (FHE) Recognition
+
+**Pattern:** The challenge hands you FHE ciphertexts plus a homomorphic-operation interface (`add` / `mul` / `scalar_mult`, sometimes `relin_keys` / `galois_keys`), often with a parameter file — not a textbook cipher. Typical CTF forms: a static ciphertext + a decrypt/verify server, an interactive homomorphic-op oracle, or raw FHE parameters pasted in the description.
+
+**Scheme families (identify first):**
+- **BFV/BGV** — exact integer, RLWE-based; parameters: polynomial modulus degree `N`, plaintext modulus `t`, ciphertext modulus `q`, noise deviation `sigma`. BGV manages noise by modulus switching, BFV by division/scaling — same parameter vocabulary (`t` small = easy enumeration).
+- **CKKS** — approximate floating-point; adds `scale` (e.g. 2^40) and rescale/level bookkeeping; plaintext is valid only up to the accumulated error.
+- **TFHE/FHEW** — boolean gate-level: encrypted bits, bootstrapped `NAND`/`MUX` gates, LWE→RLWE sample extraction; per-bit ciphertexts, smallest of the four.
+- **GSW** — matrix-based ciphertexts (approximate-eigenvector construction); mostly a building block, rare standalone in CTF.
+
+**Recognition cues:**
+- Scheme names in source/README/imports: BFV, BGV, CKKS, TFHE, FHEW, SEAL, OpenFHE, HElib, Lattigo.
+- A parameter file listing `N` (power of two, typically 1024–16384), `t`, `q`, `sigma` (SEAL-style default ≈ 3.19), `scale` (CKKS).
+- Ciphertexts **far larger** than plaintexts (polynomials of `N` coefficients, tens of KB to MB per value).
+- API exposes only encrypt/decrypt/add/mul/scalar_mult; decrypt is normally unavailable to the attacker.
+
+**Attack surface (honest framing):** FHE is LWE-based and semantically secure — a CTF is **not** asking you to break FHE. The intended bug is always a **weakened parameter choice** or **interface abuse**:
+- **Parameter weakening:** tiny `q` or `N`, or no noise budget, degenerates the instance into a small LWE/SIS instance — run a direct lattice attack (LLL/BKZ on the LWE embedding; see [lattice-and-lwe.md](lattice-and-lwe.md#lwe-via-embedding-and-cvp-plaidctf-2016-aero-ctf-2020)); a tiny plaintext modulus `t` (e.g. `t = 2`, one-bit messages) → enumerate plaintexts directly.
+- **Interface abuse:** a queryable decrypt oracle → chosen-ciphertext plaintext recovery (same family as the Paillier / homomorphic-bit-extraction oracles above); a comparison/equality endpoint (`decrypt(ct - guess) == 0`) leaks bits; ciphertext malleability lets you submit a product where the server expects a sum (or vice versa).
+- **Noise-budget exhaustion:** too many multiplications makes decryption fail — use the failure signal as an error oracle for information leakage.
+
+**Tools:** no general-purpose FHE breaker exists; use SageMath for the lattice fallback plus the challenge's own interface scripts.
+
+**Key insight:** FHE itself is not the vulnerability — every CTF FHE challenge reduces to weakened parameters or oracle/interface misuse. Fingerprint the scheme and parameters first, then attack the parameters (lattice/enumeration) or the interface, never the scheme.
+
+**References:** scheme families above; real CTF instances are usually weakened toy implementations — treat the scheme name as a recognition hint, not a cryptanalysis target.
 

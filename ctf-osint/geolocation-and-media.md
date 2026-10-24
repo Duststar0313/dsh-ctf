@@ -21,6 +21,8 @@
 - [Google Maps Crowd-Sourced Photo Verification (MidnightCTF 2026)](#google-maps-crowd-sourced-photo-verification-midnightctf-2026)
 - [Overpass Turbo Spatial Queries (LAB'OSINT 2025)](#overpass-turbo-spatial-queries-labosint-2025)
 - [Music-Themed Landmark Geolocation with Key Encoding (BSidesSF 2026)](#music-themed-landmark-geolocation-with-key-encoding-bsidessf-2026)
+- [AI Media in OSINT — Deepfake / Voice Clone Detection](#ai-media-in-osint--deepfake--voice-clone-detection)
+- [Satellite / Aerial Imagery OSINT](#satellite--aerial-imagery-osint)
 
 ---
 
@@ -462,3 +464,57 @@ print(flag)
 **When to recognize:** Challenge provides multiple images with a musical or thematic thread. Each image requires individual geolocation. The flag isn't at any single location — it's encoded across all of them.
 
 **References:** BSidesSF 2026 "strike-a-coord"
+
+---
+
+## AI Media in OSINT — Deepfake / Voice Clone Detection
+
+**定位：识别"这是 AI 生成的"，然后继续 OSINT 链 — 不是媒体取证。** 当题目素材（图片/音频）是 AI 生成时，OSINT 侧只做两件事：① 用轻量信号确认"AI 生成"这个事实；② 据此改写后续搜索策略。真正的**取证**（ELA 错误级别分析、C2PA/内容凭证逐字段核验、DeepFake 检测模型逐帧跑）属于 `ctf-forensics/ai-media-forensics.md`，本文件只给 OSINT 视角的判断与行为。
+
+**为什么必须先识别：** AI 生成图中的地标/物体是模型合成出来的（不存在真实对应物），Google Lens / TinEye 反查没有真实来源，反向地理搜索必然失败或返回幻觉结果 — 这是"该换思路"的关键信号。
+
+**判断原则：** 单个信号不可靠 — 无 EXIF 也可能只是上传/截图剥离，畸形手也可能是低分辨率压缩伪影。至少**两个独立信号**叠加，才判定"AI 生成"。
+
+**轻量检测速查（OSINT 视角信号，不是取证结论）：**
+- 图片：文字扭曲/乱码（AI 写字常坏）、手指/手畸形、过多牙齿、皮肤头发过度平滑、左右不对称
+- 无 EXIF：生成平台通常不写相机元数据（注意：上传/截图也会剥离 EXIF，单独用不可靠）
+- 平台痕迹：Midjourney 右下角水印（早期版本）/ 生成图内嵌隐形水印与 C2PA 元数据（Stability AI 的 Stable Diffusion WebUI 输出带 C2PA，Chrome 图片详情可查；平台/版本相关，不确定时按线索处理）；第三方检测站（AI or Not、Sightengine、Hive Moderation、illuminarty）可作辅助线索 — 准确率有限、会限流漂移，**不能当判定依据**（不确定项）
+- 音频（语音克隆）：听感异常 — 呼吸/停顿位置不自然、口吻连贯性差、共鸣与口音不稳；语音克隆常用 ElevenLabs / RVC / GPT-SoVITS 等（工具在变，确认具体样本时按线索走）
+- 若素材是**视频**（DeepFake 换脸）：口型与音频错位、眨眼频率异常、面部光影闪烁 — OSINT 抓到"疑似合成"即可转向，逐帧判定归取证
+
+**行为链（OSINT 侧）：**
+1. 反查无结果或结果异常 → 怀疑 AI 生成
+2. 叠加重检测信号（文字/手/无 EXIF/水印）确认
+3. 分叉：
+   - 题目问"哪些是假的" → 逐素材标注，用速查信号给出理由；flag 常藏在"唯一真图 / 唯一假图"的选取里
+   - 题目给 AI 图要信息 → 图内景物是合成的，改挖**图外**线索：提示词/prompt、元数据、文件名、题目描述文本
+4. 对 AI 图**不要**继续做街景/地标匹配 — 景物不对应任何真实位置
+
+**语音克隆的 OSINT 应用：** 题目给"伪造的语音/音频"时，用它反查**真实来源**：找目标人物（话主）的公开音频（采访、演讲、发布会）做对照确定是谁，再定位原始发布渠道 — 真实来源通常埋着 flag 线索。频谱/波形级比对属取证的活，OSINT 用听感 + 来源检索即可。
+
+**落地动作：** 把"反查了什么、结果如何"记进解题日志 — 反查失败本身是证据，帮助在 writeup 中区分"平台 API 漂移"与"素材真的是 AI 生成"。
+
+---
+
+## Satellite / Aerial Imagery OSINT
+
+**定位：** 题目给俯视影像（卫星图/航拍图）求位置。先分清视角：Google Maps 的**卫星视图**是俯视照片，**街景**是地面 360° 视角 — 题目是俯视图就别拿街景匹配。
+
+**平台（真实可用）：**
+- Google Earth 历史影像（时间线对比）
+- Sentinel Hub EO Browser — https://apps.sentinel-hub.com/eo-browser/ （免费，Sentinel-2 ~10m 分辨率，可逐日期查看）
+- USGS EarthExplorer — https://earthexplorer.usgs.gov/ （Landsat 归档，需注册）
+- NASA Worldview — https://worldview.earthdata.nasa.gov/ （每日影像、夜间灯光等图层）
+- Esri World Imagery（作为底图参照，最新拼接）
+
+**无坐标卫星图的定位特征：**
+- 海岸线/岛屿轮廓形状 → 与 Google/OSM 地图轮廓比对（找"形状相同"的候选区域）
+- 耕地纹理（几何地块、灌溉圈）→ 农业区特征；地块方向格网也有地域性
+- 跑道方向与长度 → 机场，对照机场数据库缩到城市级
+- 水体颜色、街区网格样式、屋顶/植被色调
+
+**时间线对比：** 同一地区不同日期的影像（Google Earth 历史 / Sentinel 时间序列）找变化 — 新建建筑、植被变化、水域差异；配合题目给出的时间戳锁定考察时点。
+
+**Metadata 先做：** EXIF GPS（`exiftool`）、文件属性、文件名、附带文档中的坐标 — 俯视图载体常自带坐标（衔接 [Metadata Extraction](#metadata-extraction)）。
+
+**衔接：** 地面细节推理见 [Geolocation Techniques](#geolocation-techniques)；输出坐标时用 [MGRS](#mgrs-military-grid-reference-system) 或 Plus Code（`XXXX+XX`）。CTF 常见问法：给定只有地形/海岸的俯视图 → 判区域 → 逐级缩到地物 → 落坐标 → 按题目要求转 MGRS / Plus Code / W3W。

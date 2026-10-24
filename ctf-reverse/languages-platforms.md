@@ -13,6 +13,7 @@
 - [Ruby/Perl Polyglot Constraint Satisfaction (BearCatCTF 2026)](#rubyperl-polyglot-constraint-satisfaction-bearcatctf-2026)
 - [Electron App + Native Binary Reversing (RootAccess2026)](#electron-app--native-binary-reversing-rootaccess2026)
 - [Node.js npm Package Runtime Introspection (RootAccess2026)](#nodejs-npm-package-runtime-introspection-rootaccess2026)
+- [React Native / Hermes](#react-native--hermes)
 - [Frida Android Certificate Pinning Bypass (h1702ctf 2017)](#frida-android-certificate-pinning-bypass-h1702ctf-2017)
 - [Android Anti-Debug: TracerPid, su Binary, System Properties (h1702ctf 2017)](#android-anti-debug-tracerpid-su-binary-system-properties-h1702ctf-2017)
 - [Android Log-Based Key Extraction (HackIT 2017)](#android-log-based-key-extraction-hackit-2017)
@@ -393,6 +394,35 @@ console.log('Hidden methods:', hidden);
 **Key insight:** Heavily obfuscated JavaScript (control flow flattening, RC4 string encoding, dead code) makes static analysis prohibitively slow. Runtime introspection via `Object.getOwnPropertyNames()` reveals all methods including hidden ones. The module's own decryption runs automatically when loaded — just call the decoded functions directly.
 
 **Detection:** npm package with minified/obfuscated `dist/` directory, challenge says "reverse engineer the CLI tool", `package.json` with custom commands.
+
+---
+
+## React Native / Hermes
+
+React Native (RN) apps ship their JS as a single bundle. With Hermes (RN's default engine since RN 0.70) enabled, that bundle is compiled to Hermes bytecode (`.hbc`) instead of readable Metro JS.
+
+**Structure & recognition:**
+- APK: `assets/index.android.bundle` — plain Metro JS, or Hermes bytecode (check `file`, or `xxd -l 4`: magic `c0 03 19 1f` = `0x1F1903C0`, ES6 variant `c1 03 19 1f`, followed by a version byte)
+- Native side: `libhermes.so` (VM), `libreactnative*.so`, JSI native modules; `jadx` shows the Java shell and bundle loading (`ReactInstanceManager`)
+- `hermesEnabled` in `android/app/build.gradle` decides bytecode vs plaintext; `strings libhermes.so | grep hermes` confirms the engine
+
+**Analysis:**
+```bash
+# Strings still work on .hbc (the string table survives compilation)
+strings assets/index.android.bundle | grep -iE "flag|secret|api[_-]?key"
+
+# Official disassembler (build from facebook/hermes source: hermes/tools/hbcdump)
+hbcdump -disassemble index.android.bundle
+# Community tools (Python; check repo currency): hbctool disassemble/assemble
+python3 hbctool.py disassemble index.android.bundle out.hasm
+# Third-party hermes-dec-style decoders exist; ecosystem moves fast — verify before relying
+```
+
+**Attack surface & differences from Metro plaintext:**
+- Plain Metro bundle: grep keys/flag directly; minification is the only obstacle
+- Hermes bytecode: not directly readable; **reassembly is hard** — prefer runtime hooking (Frida against the engine, e.g. `HermesInternal`) over static patching
+- Hardcoded API keys/flags, deeplink/URL-scheme handlers, and JSI native modules hiding checks in C++ (`libreactnative*.so` — reverse as a normal ELF)
+- Rebuild workflow (patch JS then regenerate): `npx react-native bundle --entry-file index.js --platform android --dev false --bundle-output index.android.bundle` (stays `.hbc` when hermesEnabled)
 
 ---
 

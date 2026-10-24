@@ -131,13 +131,13 @@ it is not provided by default.
 
 | direction | Contents | routing |
 |---|---|---|
-| `ctf-web` | HTTP apps, clients, authentication (22 files) | ✅ `routing/ctf-web.md` |
-| `ctf-pwn` | Binary exploitation (20 files) | ✅ `routing/ctf-pwn.md` |
+| `ctf-web` | HTTP apps, clients, authentication (25 files) | ✅ `routing/ctf-web.md` |
+| `ctf-pwn` | Binary exploitation (21 files) | ✅ `routing/ctf-pwn.md` |
 | `ctf-reverse` | Reverse engineering (19 files) | ✅ `routing/ctf-reverse.md` |
-| `ctf-crypto` | Cryptography and mathematics (19 files) | ✅ `routing/ctf-crypto.md` |
-| `ctf-forensics` | Forensics, steganography, signals (16 files) | ✅ `routing/ctf-forensics.md` |
+| `ctf-crypto` | Cryptography and mathematics (20 files) | ✅ `routing/ctf-crypto.md` |
+| `ctf-forensics` | Forensics, steganography, signals (17 files) | ✅ `routing/ctf-forensics.md` |
 | `ctf-misc` | Cross-category catch-all (12 files) | ✅ `routing/ctf-misc.md` |
-| `ctf-malware` | Malicious samples and traffic (3 files) | ✅ `routing/ctf-malware.md` |
+| `ctf-malware` | Malicious samples and traffic (5 files) | ✅ `routing/ctf-malware.md` |
 | `ctf-osint` | Public-source intelligence (4 files) | ✅ `routing/ctf-osint.md` |
 | `ctf-ai-ml` | AI/ML attacks (3 files) | ✅ `routing/ctf-ai-ml.md` |
 | `ctf-writeup` | Meta skill: write the writeup | fallback to `SKILL.md` |

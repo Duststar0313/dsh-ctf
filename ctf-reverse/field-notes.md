@@ -88,6 +88,7 @@ Detailed quick notes that support [`SKILL.md`](SKILL.md). Read this file after t
   - [Batch Crackme Automation via objdump](#batch-crackme-automation-via-objdump)
   - [Android DEX Runtime Bytecode Patching](#android-dex-runtime-bytecode-patching)
   - [Fork + Pipe + Dead Branch Anti-Analysis](#fork--pipe--dead-branch-anti-analysis)
+- [AI/LLM-Assisted Reverse Engineering](#ai-llm-assisted-reverse-engineering)
 
 ## Binary Types
 
@@ -374,3 +375,28 @@ Native JNI library patches Dalvik bytecode in memory via `/proc/self/maps` + `mp
 
 ### Fork + Pipe + Dead Branch Anti-Analysis
 Fork/pipe IPC where parent writes data and exits, child reads and continues. Real validation hidden in a dead branch (always-false comparison). `strace` reveals the fork/pipe pattern; patch the comparison constant to reach hidden code. See [patterns-ctf-3.md](patterns-ctf-3.md#fork--pipe--dead-branch-anti-analysis-rctf-2017).
+
+## AI/LLM-Assisted Reverse Engineering
+
+Workflow: use an LLM to **accelerate understanding** — never as the sole authority.
+
+**Typical flow:**
+1. Decompile with Ghidra/IDA (Hex-Rays) and dump the pseudocode
+2. Ask the LLM for: function purpose / rename candidates, algorithm summary, suspicious constants (keys/IVs), protocol structure
+3. **Verify the summary against runtime evidence** before acting on it (`ltrace`/`strace`, GDB breakpoints, replaying the algorithm in Python)
+
+**Plugins (ecosystem moves fast — treat any list as time-sensitive and check current state):**
+- GhidraGolf — experimental LLM-RE benchmark harness (headless Ghidra, scored on function naming); a benchmark, not a daily analysis plugin
+- MCP-style Ghidra/IDA integrations (GhidraMCP, ida-pro-mcp) and experimental codex-style auto-naming plugins appear/disappear quickly
+
+**Honest warnings:**
+- LLMs **hallucinate** function names, constants, and protocol structures. A confident "this is AES-CBC with key X" is a hypothesis, not a finding.
+- Custom-VM bytecode "translations" from an LLM are references, not facts — one wrong opcode meaning poisons the whole trace.
+- Anchor everything with execution/cross-checks; treat pseudocode claims as leads to verify.
+
+**When it helps vs. hurts:**
+- Helps: large stripped binaries / boilerplate-heavy obfuscated code where renaming and summarizing save hours
+- Hurts: small hand-written crackmes — reading ~50 lines of disassembly is faster than prompt round-trips
+- Complements symbolic execution: use the LLM to pick *where* to point angr/manticore, then verify behavior with the solver.
+
+**Headless batch:** `analyzeHeadless` + Ghidra scripts dump all function pseudocode to files for batch LLM review — see [tools.md](tools.md#ghidra) and [tools-advanced-2.md](tools-advanced-2.md).

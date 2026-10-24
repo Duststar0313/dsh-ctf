@@ -21,12 +21,12 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 | `server-side-advanced-2.md` | Docker API SSRF, Castor/XML, reading files via Apache expression, parser discrepancies, Windows path tricks, reading files with a malicious MySQL server | The target is a container/internal service, or you need a "fake server" to call back to |
 | `server-side-advanced-3.md` | WAV polyglot + `.wave` bypass, multi-slash URL bypassing `startswith`, Xalan XSLT `math:random()` seed guessing, `SoapClient` UA CRLF smuggling, `gopher:///` hostless bypass, SSRF credential leakage | Classic 2018-era challenges, old frameworks, need for obscure bypasses |
 | `server-side-advanced-4.md` | WeasyPrint SSRF/file read (CVE-2024-28184), MongoDB regex/`$where` blind injection, Pongo2 template injection, ZIP webshell, `basename()` bypass, wget CRLF→SMTP, Gopher→MySQL blind injection, React Server Components Flight RCE (CVE-2025-55182), intercepting AMQP/TLS with sslstrip+arpspoof, CairoSVG XXE | Modern dependency CVEs, PDF/export rendering, Mongo blind injection |
-| `client-side.md` | XSS, CSRF, cache poisoning, DOM tricks, admin bot abuse, request smuggling, paywall bypass | Reflected/stored input, a bot visits, frontend routing |
-| `client-side-advanced.md` | CSP bypass, Unicode tricks, XSSI, CSS exfiltration, browser normalization quirks, `postMessage` null origin bypass | Strict CSP, no JS execution environment, blind exfiltration needed |
+| `client-side.md` | XSS, CSRF, cache poisoning, DOM tricks, admin bot abuse, request smuggling, paywall bypass, WebSocket hijacking (CSWSH) & smuggling | Reflected/stored input, a bot visits, frontend routing, an `Upgrade: websocket` endpoint or WS messages exist |
+| `client-side-advanced.md` | CSP bypass, Unicode tricks (case folding, bidi/trojan-source), XSSI, CSS exfiltration, browser normalization quirks, `postMessage` null origin bypass, Trusted Types & Sanitizer API bypass, SRI bypass | Strict CSP, no JS execution environment, blind exfiltration needed, `require-trusted-types-for` / `integrity=` present, source has invisible bidi chars |
 | `auth-and-access.md` | Authentication/authorization bypass, hidden endpoints, IDOR, redirect chains, subdomain takeover, AI chatbot jailbreak (also: weak signature bypass, NoSQL injection, cookie manipulation, Host header bypass, reading `/proc/self/mem` via Range, forging a custom linear MAC, TOTP `srand(time())` recovery, HAProxy regex bypass via URL encoding, Express `%2F` middleware bypass, HTTP TRACE bypass, OAuth email subaddress bypass) | Login/registration/permission decisions behave oddly, an admin panel exists, session or signature is guessable |
 | `auth-and-access-2.md` | `std::unordered_set` bucket collision bypass, `nodeprep.prepare` homoglyph username collision, SRP `A=0/A=N` bypass, privilege escalation via ArangoDB AQL MERGE | 2018-era challenges, unconventional authentication protocols, NoSQL graph databases |
 | `auth-jwt.md` | JWT/JWE manipulation, weak keys, header injection, key confusion, replay, JWK/JKU injection, `kid` path traversal, balance replay, JWE forgery with an exposed public key, AES cookie length-field truncation + CRC32 swap | A three-part token appears in the `Authorization` header/cookie, or the balance/permissions live in the token |
-| `auth-infra.md` | OAuth/OIDC, SAML, CORS misconfiguration, CI/CD secrets, IdP takeover, login page poisoning, credentials leaked in Git history, TeamCity REST RCE, lax Base64 decoding + parameter override to bypass signatures, hash length extension | Third-party login, SSO, CI/CD panels, suspicious signature validation |
+| `auth-infra.md` | OAuth/OIDC (+DPoP/PAR/device flow/JARM), SAML, WebAuthn/passkey/FIDO2, CORS misconfiguration, CI/CD secrets, IdP takeover, login page poisoning, credentials leaked in Git history, TeamCity REST RCE, lax Base64 decoding + parameter override to bypass signatures, hash length extension | Third-party login, SSO, WebAuthn/passkey/FIDO2 (`navigator.credentials`/credential JSON), DPoP/PAR/device-flow endpoints, CI/CD panels, suspicious signature validation |
 | `node-and-prototype.md` | Prototype pollution, JS sandbox escape, Node.js attack chains | The backend is Node, input contains `__proto__`/`constructor`, a VM sandbox is present |
 | `web3.md` | Solidity/blockchain: EIP-1967 proxies, ABI coder v1/v2 dirty-address bypass, stripping CBOR metadata to bypass codehash, non-standard calldata encoding, `delegatecall` storage-context abuse, Groth16 proof forgery, transient storage clearing conflicts, reentrancy | The target contains contract addresses, RPC, Foundry/web3.py toolchains |
 | `cves.md` | Techniques keyed on CVEs, used to match banners, response headers, dependency leaks, version strings | You have version information and need to find an exploit by CVE |
@@ -34,11 +34,14 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 | `python-requests.md` | Python Requests toolkit — "Burp Intruder in Python": Intruder-vs-Repeater workflow choice, Session scaffold, proxy/verify setup, concurrent brute force, encoding and error handling | You need high-volume or scripted request automation — fuzzing a parameter, brute-forcing a token, or replaying with variations — rather than clicking through a proxy |
 | `pat-reference.md` | PayloadsAllTheThings reference index: how to use it, plus a category map from a local technique to the corresponding PAT path | You know the class of bug and want the matching payload catalogue from PayloadsAllTheThings |
 | `ai-agentic-web.md` | Tool-argument injection, MCP tool abuse, browser-agent (WebVoyager-style) hijacking, agent memory/context poisoning, agent-as-SSRF, confused-deputy tool privilege diffusion | A chat/agent UI shows tool-call traces, the API lists `tool`/`action`/`mcp` endpoints, or a bot agent visits submitted URLs |
+| `client-side-browser-isolation.md` | COOP/COEP/CORP semantics and bypasses (double-hop popups, window-name reuse), CORP/credentialless existence and login-state oracles, PNA preflight & browser SSRF, fenced-frame data exfil, double-keyed cache poisoning and partition probes, XS-Leak tactical playbook | Response headers carry COOP/COEP/CORP, a bot runs modern Chrome, or you need cross-origin information leakage (login state, resource existence, cache state) rather than direct XSS |
+| `modern-protocols.md` | gRPC/protobuf reflection & parse divergence, serverless/FaaS metadata/env & artifact abuse, HTTP/3 (QUIC) basics, WebSocket CSWSH/smuggling supplement | The target speaks gRPC (`application/grpc`, port 50051), is a serverless/cloud-function entry URL, or shows HTTP/3/QUIC hints (`Alt-Svc: h3`, UDP 443) |
 
 ## Decision Tree
 
-- Login/registration/permissions/session anomalies → `auth-and-access.md`; with a three-part token also add `auth-jwt.md`; third-party login/SSO involved → `auth-infra.md`; unconventional authentication protocols → `auth-and-access-2.md`
+- Login/registration/permissions/session anomalies → `auth-and-access.md`; with a three-part token also add `auth-jwt.md`; third-party login/SSO involved → `auth-infra.md`; WebAuthn/passkey (`navigator.credentials.create/get`) or DPoP/PAR/device-flow OAuth involved → `auth-infra.md`; unconventional authentication protocols → `auth-and-access-2.md`
 - Input is echoed back into the page or reaches the DOM → `client-side.md`; strict CSP or no JS environment → `client-side-advanced.md`
+- COOP/COEP/CORP headers are present, a hardened/isolated browser or current-Chrome bot is in play, or you need cross-origin information leakage (login state, resource existence, cache state) instead of direct XSS → `client-side-browser-isolation.md`
 - An admin bot / a bot visits content I submit → the bot section of `client-side.md`
 - A URL/parameter is fetched by the server (images, webhooks, exports, PDF) → SSRF in `server-side.md`; advanced bypasses → `server-side-advanced.md`; internal services/containers → `server-side-advanced-2.md`
 - XML input or file parsing appears → XXE in `server-side-2.md`; SVG/PDF rendering → `server-side-advanced-4.md`
@@ -50,6 +53,7 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 - The target contains smart contracts/RPC → `web3.md`
 - You only have a version number/banner → `cves.md`
 - An LLM agent is in play (chat UI with tool-call echo, MCP/JSON-RPC endpoints, a bot that visits my content) → `ai-agentic-web.md`
+- The target speaks gRPC/protobuf (`application/grpc`, port 50051) → `modern-protocols.md`; serverless/cloud-function entry URL → `modern-protocols.md`; HTTP/3 or QUIC hints (`Alt-Svc: h3`, UDP 443) → `modern-protocols.md`
 - None of the above is clear and you need a broad quick reference → `field-notes.md`
 
 ## Common Entry Points
@@ -65,6 +69,8 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 - IDOR / privilege escalation → `auth-and-access.md` "IDOR on Unauthenticated WIP Endpoints"
 - Subdomain takeover → `auth-and-access.md` "Subdomain Takeover"
 - Request smuggling → `client-side.md` + `server-side-advanced-4.md`
+- WebAuthn/passkey registration or assertion → `auth-infra.md` "WebAuthn / Passkey / FIDO2 (Web Authentication)"
+- DPoP/PAR/device-flow endpoints → `auth-infra.md` "OAuth 2.1-era Flows: DPoP / PAR / Device Flow / JARM"
 
 ## Related Directions
 

@@ -2,6 +2,7 @@
 
 ## Table of Contents
 - [Log Analysis](#log-analysis)
+- [Log4j / Log4Shell Trace Analysis](#log4j--log4shell-trace-analysis)
 - [Linux Attack Chain Forensics](#linux-attack-chain-forensics)
 - [Docker Image Forensics (Pragyan 2026)](#docker-image-forensics-pragyan-2026)
 - [Browser Credential Decryption](#browser-credential-decryption)
@@ -36,6 +37,37 @@ grep "FLAGPART" server.log | sed 's/.*FLAGPART: //' | uniq | tr -d '\n'
 # Find anomalies
 sort logfile.log | uniq -c | sort -rn | head
 ```
+
+---
+
+## Log4j / Log4Shell Trace Analysis
+
+**Pattern (CVE-2021-44228, Log4Shell):** log4j 2.x log entries can *evaluate* lookup expressions — the log line itself becomes an exfiltration / flag-print channel. In CTFs the flag is often leaked into the log via environment-variable lookups.
+
+**Trace forms to grep for:**
+```bash
+# JNDI lookup marker (canonical Log4Shell payload)
+grep -aE '\$\{jndi:(ldap|ldaps|rmi|dns)://' app.log
+
+# Lookup interpolation leaks: environment variables / system properties
+grep -aE '\$\{(env|sys|jndi|lower|upper|::-)[^}]*\}' app.log
+
+# 2.15-2.16 bypass nesting: ${${::-j}${::-n}${::-d}${::-i}} or ${jndi:${lower:l}...}
+grep -aE '\$\$\{::-|\$\{jndi:\$\{lower:'
+```
+
+**Knowledge:**
+- `${env:FLAG}` reads environment variable `FLAG`; `${sys:...}` reads JVM system properties — both evaluated at log-write time, so the flag only ever exists inside the log artifact
+- 2.15/2.16 restricted JNDI, bypassable with nested lookups (`${lower:}` case manipulation, `${::-...}` defaults); JNDI removed in 2.17.0 (see also CVE-2021-45046, CVE-2021-44832)
+- Forensic angles: (1) grep application logs for the lookup strings above; (2) search memory/heap dumps for `jndi:` request strings (see the JVM Heap Dump section in disk-and-memory.md); (3) cross-check outbound LDAP/RMI connections — logs vs pcap: `tshark -r cap.pcap -Y "ldap || tcp.port==1389 || tcp.port==1099"`, a real exploit pairs a `jndi` log line with a 1389/1099 connection
+
+**Generic log-carved secret workflow (any log artifact):**
+```bash
+grep -aE 'flag\{|eyJ[A-Za-z0-9_-]{10,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' /var/log -r
+# flag{ = CTF flag; eyJ = base64url JWT start; sk- = API-key prefix; AKIA = AWS access key id
+```
+
+**Key insight:** With Log4Shell the log entry is both attack vector and evidence — also search rotated logs (`.1`, `.gz`), journald (`journalctl -u service`), and container stdout (`kubectl logs` / `crictl logs`).
 
 ---
 

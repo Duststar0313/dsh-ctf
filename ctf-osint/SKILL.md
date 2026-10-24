@@ -41,7 +41,7 @@ brew install whois bind nmap exiftool imagemagick curl
 ## Additional Resources
 
 - [social-media.md](social-media.md) - Twitter/X (user IDs, Snowflake timestamps, Nitter, memory.lol, Wayback CDX), Tumblr (blog checks, post JSON, avatars), BlueSky search + API, Unicode homoglyph steganography, Discord API, username OSINT (namechk, whatsmyname, Osint Industries), username metadata mining (postal codes), platform false positives, multi-platform chains, Strava fitness route OSINT
-- [geolocation-and-media.md](geolocation-and-media.md) - Image analysis, reverse image search (including Baidu for China), Google Lens cropped region search, reflected/mirrored text reading, geolocation techniques (railroad signs, infrastructure maps, MGRS), Google Plus Codes, EXIF/metadata, hardware identification, newspaper archives, IP geolocation, Google Street View panorama matching, What3Words micro-landmark matching, Google Maps crowd-sourced photo verification, Overpass Turbo spatial queries, music-themed landmark geolocation with key encoding
+- [geolocation-and-media.md](geolocation-and-media.md) - Image analysis, reverse image search (including Baidu for China), **AI-media / deepfake & voice-clone recognition (identify "AI-generated", then continue the OSINT chain — forensics is /ctf-forensics/ai-media-forensics.md)**, Google Lens cropped region search, reflected/mirrored text reading, geolocation techniques (railroad signs, infrastructure maps, MGRS, **satellite/aerial imagery: Google Earth, Sentinel Hub EO Browser, USGS EarthExplorer, NASA Worldview, Esri World Imagery**), Google Plus Codes, EXIF/metadata, hardware identification, newspaper archives, IP geolocation, Google Street View panorama matching, What3Words micro-landmark matching, Google Maps crowd-sourced photo verification, Overpass Turbo spatial queries, music-themed landmark geolocation with key encoding
 - [web-and-dns.md](web-and-dns.md) - Google dorking (including TBS image filters), Google Docs/Sheets enumeration, DNS recon (TXT, zone transfers), Wayback Machine, FEC research, Tor relay lookups, GitHub repository analysis, Telegram bot investigation, WHOIS investigation (reverse WHOIS, historical WHOIS, IP/ASN lookup), fake service banner detection via nmap fingerprinting
 - [china-sources.md](china-sources.md) - Mainland-China sources: `省_市_区_地点` flag convention, China visual cues (blue plates, simplified text, menlou gates), Amap/Baidu Maps over Google for mainland POIs, Zhihu and Chinese-language text pivots, Baidu reverse image search, 工信部 ICP and 天眼查 corporate records, and why the Twitter/Tumblr/BlueSky playbook misses Chinese targets
 
@@ -102,6 +102,7 @@ shodan host <ip>
 - Google Lens (crop to region of interest), Google Images, TinEye, Yandex (faces). Check corners for visual stego. Twitter strips EXIF. See [geolocation-and-media.md](geolocation-and-media.md).
 - **Cropped region search:** Isolate distinctive elements (shop signs, building facades) and search via Google Lens for better results than full-scene search. See [geolocation-and-media.md](geolocation-and-media.md).
 - **Reflected text:** Flip mirrored/reflected text (water, glass) horizontally; search partial text with quoted strings. See [geolocation-and-media.md](geolocation-and-media.md).
+- **AI-generated media (deepfake / voice clone):** reverse search fails + AI tells (distorted text, malformed hands, no EXIF, generator watermark) → treat the image/audio as synthetic, pivot to prompt/metadata/filename clues and keep going; for voice clones, compare against the target's public audio. Recognition only — media forensics (ELA/C2PA) is `/ctf-forensics/ai-media-forensics.md`. See [geolocation-and-media.md](geolocation-and-media.md).
 
 ## Geolocation
 
@@ -110,6 +111,7 @@ shodan host <ip>
 - **Road sign OCR:** Extract text from directional signs (town names, route numbers) to pinpoint road corridors. Driving side + sign style + script identify the country. See [geolocation-and-media.md](geolocation-and-media.md).
 - **Architecture + brand identification:** Post-Soviet concrete = Russia/CIS; named businesses → search locations/branches → cross-reference with coastline/terrain. See [geolocation-and-media.md](geolocation-and-media.md).
 - **Music-themed landmark geolocation:** Multiple images of music-related landmarks worldwide; each yields a piano key number encoding one flag character. Identify all locations first, then decode the key sequence. See [geolocation-and-media.md](geolocation-and-media.md).
+- **Satellite/aerial imagery:** overhead top-down view → Google Earth (history timeline), Sentinel Hub EO Browser, USGS EarthExplorer, NASA Worldview, Esri World Imagery; match coastline/island shapes, field texture, runway direction; timeline-compare for changes; output MGRS / Plus Code. See [geolocation-and-media.md](geolocation-and-media.md).
 
 ## Mainland China / Chinese-Language Challenges
 

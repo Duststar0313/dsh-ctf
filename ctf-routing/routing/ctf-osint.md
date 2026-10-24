@@ -17,7 +17,7 @@ Out of scope: extracting from local files and traffic captures (pivot to `ctf-fo
 | File | Contents | When to read |
 |---|---|---|
 | `social-media.md` | Twitter/X (numeric User ID, Snowflake timestamps, Nitter, memory.lol, Wayback CDX), Tumblr, BlueSky search and API, Unicode homoglyph steganography, Discord API, username OSINT (namechk, whatsmyname, Osint Industries), username metadata mining (postal codes), platform false positives, multi-platform chaining, Strava routes | The clue is an account, username, or social post |
-| `geolocation-and-media.md` | Image analysis, reverse image search (including Baidu), Google Lens crop-region search, mirrored-text reading, geolocation (railway signs, infrastructure maps, MGRS), Google Plus Codes, EXIF/metadata, hardware identification, newspaper archives, IP geolocation, Street View panorama matching, What3Words micro-landmark matching, crowdsourced map photo verification, Overpass Turbo spatial queries | Given a photo/video, need to pin down the location, read metadata, or match a streetscape |
+| `geolocation-and-media.md` | Image analysis, reverse image search (including Baidu), **AI-media / deepfake & voice-clone recognition**, Google Lens crop-region search, mirrored-text reading, geolocation (railway signs, infrastructure maps, MGRS, **satellite/aerial imagery**), Google Plus Codes, EXIF/metadata, hardware identification, newspaper archives, IP geolocation, Street View panorama matching, What3Words micro-landmark matching, crowdsourced map photo verification, Overpass Turbo spatial queries | Given a photo/video, need to pin down the location, read metadata, match a streetscape, **an image/audio that may be AI-generated (deepfake / voice clone)**, or an overhead satellite/aerial view |
 | `web-and-dns.md` | Google dorking (including TBS image filtering), Google Docs/Sheets enumeration, DNS reconnaissance (TXT, zone transfer), Wayback Machine, FEC political donations, Tor relay lookups, GitHub repository analysis, Telegram bot investigation, WHOIS (reverse/historical/IP-ASN), nmap fingerprinting of fake service banners | The clue is a domain, DNS, repository, public record, or suspicious port |
 | `china-sources.md` | Mainland-China sources: `省_市_区_地点` flag convention, China visual cues (blue plates, simplified text, menlou), Amap/Baidu Maps over Google for POIs, Zhihu and Chinese-language text pivots, Baidu reverse image search, 工信部 ICP / 天眼查 corporate records, why Twitter/Tumblr/BlueSky do not reach Chinese targets | The challenge or its clues point at mainland China — Chinese text, Chinese platforms, or a scene that reverse image search only resolves on Baidu |
 
@@ -32,6 +32,9 @@ Out of scope: extracting from local files and traffic captures (pivot to `ctf-fo
 - Need to pin down a location → railway signs / street sign OCR / building and brand style / lane direction → `geolocation-and-media.md`
 - Coordinates are a grid or short code → MGRS `4V FH 246 677` or Plus Code `XXXX+XXX` → `geolocation-and-media.md`
 - Suspected Street View crop → panorama matching (feature extraction + multi-metric ranking) → `geolocation-and-media.md`
+- Reverse image search returns nothing plausible (or results look hallucinated) **and the image shows AI tells** (distorted text, malformed hands, no EXIF, generator watermark) → treat it as AI-generated: recognition only, then pivot to prompt/metadata/filename clues and continue the OSINT chain → `geolocation-and-media.md`; media **forensics** (ELA, C2PA) → `ctf-forensics/ai-media-forensics.md`
+- Clue is an audio clip possibly cloned from a known person (deepfake voice) → light listening + comparison against the target's public audio to identify the real speaker/source → `geolocation-and-media.md` (spectral/waveform analysis is forensics)
+- Clue is a satellite/aerial top-down image (coastline, fields, runway visible, no street-level detail) → identify terrain features and timeline-compare, then output coordinates → `geolocation-and-media.md`
 - Clue is a username → check cross-platform with whatsmyname / namechk; **watch for platform false positives** → `social-media.md`
 - Clue is X/Twitter → numeric User ID (still valid after rename), reverse the timestamp from the Snowflake, pull history via Nitter/Wayback → `social-media.md`
 - A social post looks normal but may hide data → Unicode homoglyph steganography (ASCII=0, homoglyph=1) → `social-media.md`
@@ -60,6 +63,7 @@ Out of scope: extracting from local files and traffic captures (pivot to `ctf-fo
 ## Related Directions
 
 - Local files/traffic captures already in hand and extraction or carving is needed → `ctf-forensics`
+- Provenance/authenticity **forensics** of AI media (ELA, C2PA field-level checks, deepfake detection models on frames) → `ctf-forensics/ai-media-forensics.md`; the osint direction only recognizes "AI-generated" as a fact and continues the chain
 - Pivot to active exploitation of an online HTTP service → `ctf-web`
 - Malicious samples, beacons, or suspicious binaries found during intelligence gathering → `ctf-malware`
 

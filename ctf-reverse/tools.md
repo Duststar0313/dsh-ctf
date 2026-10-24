@@ -25,6 +25,7 @@
 - [WASM Analysis](#wasm-analysis)
   - [Decompile to C](#decompile-to-c)
   - [Common Patterns](#common-patterns)
+  - [WASI / Component Model](#wasi--component-model)
 - [Android APK](#android-apk)
   - [Extraction](#extraction)
   - [Key Locations](#key-locations)
@@ -289,6 +290,24 @@ gcc -O3 checker.c wasm-rt-impl.c -o checker
 - `w2c_memory` - Linear memory array
 - `wasm_rt_trap(N)` - Runtime errors
 - Function exports: `flagChecker`, `validate`
+
+### WASI / Component Model
+
+WASI (WebAssembly System Interface) gives WASM a POSIX-like syscall surface — `fd_read`, `fd_write`, `path_open`, `fd_seek`, `environ_get`, `clock_time_get` — usually provided by `wasi-libc` at compile time and imported by the module.
+
+```bash
+# Inspect imports (which WASI syscalls the module uses)
+wasm-objdump -x module.wasm | sed -n '/Import/,/^$/p'   # import section
+wasm-objdump -d module.wasm | grep -E "call [0-9]+"      # where imports get called
+# Run a WASI module without a browser
+wasmtime run module.wasm
+wasmer run module.wasm
+```
+
+- Build flags to recognize: `clang --target=wasm32-wasi`, `zig build-exe -target wasm32-wasi` — functions look like libc wrappers (`__wasi_fd_write`) over the raw imports
+- The algorithm inside is still plain WASM: decompile/emulate with `wasm2c` / wasm2wat as above; WASI only changes the I/O surface, not the math
+- Component Model (component sections + `wit` interfaces, `canon` adapters) is newer and rarer in CTF; inspect with `wasm-tools`
+- **Boundary:** reversing a WASI module = understand what it computes (this file); exploiting the runtime / its syscall handling = `ctf-pwn` → `wasm-pwn.md`
 
 ---
 

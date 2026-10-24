@@ -45,6 +45,7 @@
 - [Python eval() Jail Escape via Tuple Injection (Codegate 2018)](#python-eval-jail-escape-via-tuple-injection-codegate-2018)
 - [Python f-string Config Injection via Stored eval (INShAck 2018)](#python-f-string-config-injection-via-stored-eval-inshack-2018)
 - [Hints Cheat Sheet](#hints-cheat-sheet)
+- [Python 3.12+ / 3.13+ Jail Surface](#python-312-313-jail-surface)
 
 ---
 
@@ -1078,3 +1079,38 @@ for pad in range(20):
 **Key insight:** A prime-length check is not a security boundary — it is just a padding puzzle. Comments (`#`), semicolons, whitespace, and hex escapes (`\x41`) let you hit any prime in the allowed window without changing semantics. Combine with `__getitem__`/`__getattribute__` gadgets above to handle any additional filter the primal challenge layers on.
 
 **References:** PlaidCTF 2024 `impossible`/`one`/`primal` trio; JailCTF 2024 `filter'd`; ImaginaryCTF 2024 `calc`; DiceCTF 2023 `IRS`
+
+---
+
+## Python 3.12+ / 3.13+ Jail Surface
+
+**Pattern:** Jail runs on a recent interpreter (3.12/3.13/3.14). Most classic escapes work unchanged; the new surface is syntax (PEP 701) plus version identification, not new object-graph primitives.
+
+**Version identification first:**
+```python
+import sys; sys.version_info        # (3, 13, 1) — needs the import
+python --version                    # only if you already have a shell-ish primitive
+type(lambda: 0).__code__            # 3.x exposes __code__/__globals__; Python 2 used func_code/func_globals
+type(1 << 64).__name__              # 'int' on 3.x, 'long' on Python 2; 3.x repr has no trailing L
+hasattr(int, 'bit_length')          # True on 3.x only — Python 2's int type lacks bit_length
+```
+
+**PEP 701 (3.12+) — f-string syntax formalized:** f-string expression parts are now parsed by the regular PEG parser, so constructs that were `SyntaxError` on ≤3.11 are legal:
+```python
+f"{'\n'}"              # backslash inside an expression — valid 3.12+, SyntaxError ≤3.11
+f"{f"{'ok'}"}"         # same-quote f-string nesting — valid 3.12+
+f"""{
+    x  # comments allowed inside the expression (multi-line f-string)
+}"""
+```
+Jail relevance: this matters when you control an f-string *template* (config templating, `eval(f"your_{inp}")`-style injection — see the INShAck f-string section above): the expression slot evaluates with full access to the caller's scope and now accepts a much wider grammar. For a plain `eval(user_input)` jail, PEP 701 changes little. Exact edge cases (comments/multi-line) vary by 3.12/3.13/3.14 patch level — **以目标解释器版本实测为准**.
+
+**3.13 free-threading:** GIL-free is a build-time option (`--disable-gil`); identify at runtime via `sys._is_gil_enabled()` (3.13+, returns False only on free-threaded builds). Practical jail impact is minimal — object graph, `__subclasses__` chains and audit hooks behave the same — mainly a build fingerprint when the challenge hints at it.
+
+**What did NOT change:**
+- `sys.addaudithook` is **3.8+** (PEP 578), not a 3.12/3.13 feature — whether an audit-hook trampoline (Audit-Hook section above) still works depends on the target version; do not assume a 3.11-era bypass survives 3.13.
+- `sys._getframe()` and `locals()` remain usable on 3.12/3.13; PEP 667 (3.14) makes `locals()` a snapshot in optimized frames — potentially jail-relevant, **以目标版本实测为准**.
+- Classic chains still work on 3.12+: `().__class__.__bases__[0]` → `__subclasses__()` enumeration is unchanged.
+- 3.12 `__build_class__`/compile internals and 3.12+ `dis` layout changes are out of scope here — rarely decisive for escapes.
+
+**The real 3.12+ shift is defensive:** jails increasingly parse with `ast.parse(source, mode='eval')` / `compile(source, ..., mode='eval')` plus a custom visitor whitelist instead of string blacklists. Test whether the visitor recurses into `ast.JoinedStr` / `ast.FormattedValue` children — a PEP 701 f-string is valid AST a shallow node filter may not inspect.
