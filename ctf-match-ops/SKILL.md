@@ -92,6 +92,19 @@ name, category, points, flag, time-to-solve, tools used, one-paragraph approach,
 `challenges/<name>/trace.md` — the significant commands, their key outputs, and what each
 conclusion was based on. This is the asset for post-event review ("where did I get stuck"),
 for a later attempt that resumes from zero, and for any future trajectory-based training.
+Minimal format (append entries as you go):
+
+```markdown
+# trace — <challenge name>
+
+## <HH:MM> <phase/idea>
+- cmd: `<command>`
+- got: <key output, one line>
+- conclude: <what this rules in/out>
+```
+
+At the bottom keep a running `## untried` list of not-yet-attempted ideas — this is what a
+resumed attempt reads first (Rule 4 in `ctf-routing`).
 
 When a challenge is solved, hand off to `ctf-writeup` for the standardized writeup. Under time pressure,
 record the raw log immediately and generate the polished writeup during a lull or after the event.

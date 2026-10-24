@@ -117,6 +117,27 @@ three inputs (LingXi advisor pattern): (1) the challenge description, (2) your l
 single highest-signal next action, and what to stop doing. Cost is one LLM call; treat its answer
 as a hypothesis to test, not a solution.
 
+Reusable advisor prompt (fill the three placeholders verbatim):
+
+```text
+You are a fresh-context CTF advisor. You do NOT have my reasoning history — that is the point.
+
+MY CHALLENGE:
+<paste challenge description here>
+
+MY LATEST DECISION:
+<one line: what I just decided/tried and why>
+
+LATEST TOOL OUTPUT:
+<paste the last tool result, truncated to ~2000 chars>
+
+Answer in at most 120 words, three parts only:
+1. What I am most likely missing (the highest-value blind spot)
+2. The single highest-signal next action I should take RIGHT NOW (a concrete command or tool)
+3. What I should STOP doing
+No preamble, no explanation of your reasoning.
+```
+
 Then, if pivoting is still warranted:
 
 1. **Re-examine your assumptions** — is this really the category you think? A "web" challenge may need
