@@ -88,6 +88,11 @@ committing to one hard target. Depth is for after the easy points are banked.
 Maintain a running solve log as you go, not at the end. For each solved challenge capture:
 name, category, points, flag, time-to-solve, tools used, one-paragraph approach, and the solve script path.
 
+**Keep a process trace, not just the outcome.** While solving, save key steps to
+`challenges/<name>/trace.md` — the significant commands, their key outputs, and what each
+conclusion was based on. This is the asset for post-event review ("where did I get stuck"),
+for a later attempt that resumes from zero, and for any future trajectory-based training.
+
 When a challenge is solved, hand off to `ctf-writeup` for the standardized writeup. Under time pressure,
 record the raw log immediately and generate the polished writeup during a lull or after the event.
 
@@ -96,6 +101,10 @@ record the raw log immediately and generate the polished writeup during a lull o
 - Set an explicit budget per challenge **before** starting (e.g. 20 min for a low-point challenge).
 - When the budget expires, decide deliberately: extend once with a reason, park it, or abandon it.
   Parking requires writing down current state so a later attempt does not restart from zero.
+- **Decide the "extend once" using failure attribution** (Rule 3 in `ctf-routing` § Operating
+  Discipline): L1 tool error or L2 insufficient recon → worth one extension; L3 wrong strategy →
+  extend only to switch the attack vector; L4 cognitive bias / repeated same failure → do **not**
+  extend, park it — more time on the same path will not pay.
 - Track total elapsed event time. Late in the event, favor challenges that are nearly solved over
   fresh attractive ones.
 - A failed tool install or a broken environment is a time sink: cap debugging it, and note the missing

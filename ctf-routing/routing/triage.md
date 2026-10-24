@@ -29,11 +29,13 @@ export CTF_TOKEN="ctfd_..."   # ask the user for this
 
 ## Step 1 — Recon
 
+0. **Connect FIRST if a service is provided** — `nc` the remote port or `curl -v <url>` *before*
+   touching local files. The flag lives on the service; local distfiles are usually just clues
+   (see Rule 2 in `SKILL.md` § Operating Discipline).
 1. **Explore the files** — list the challenge directory and run `file *` on everything.
 2. **Triage binaries** — `strings`, `xxd | head`, `binwalk`, `checksec` on binaries.
 3. **Fetch the links** — if the challenge mentions URLs, fetch them FIRST for context.
-4. **Connect** — try the remote service (`nc`) to understand what it expects.
-5. **Read the hints** — the description, filenames and comments often contain clues.
+4. **Read the hints** — the description, filenames and comments often contain clues.
 
 ## Step 2 — Categorize
 
@@ -95,12 +97,38 @@ single file it names:
 
 ## Step 4 — Pivot when stuck
 
+**Before pivoting, run the two gates below** (full rules in `SKILL.md` § Operating Discipline).
+
+**Gate A — Loop check.** Normalize the last ~12 tool calls (command + key args). Any signature
+repeated 3× warns, 5× forces a pivot; 6+ consecutive rounds with no new information also count as
+stuck. If tripped, do not "try harder" on the same path.
+
+**Gate B — Failure attribution (L1–L4).** Classify why you are stuck, then act on the class:
+
+- **L1 tool error** → fix the command; stay on course.
+- **L2 insufficient recon** → expand recon; do **not** pivot.
+- **L3 wrong strategy** → switch attack vector (this is the only class where pivoting helps).
+- **L4 cognitive bias** → reset approach, inject a fresh hypothesis, no mechanical retries.
+
+**Gate C — Ask a fresh-context advisor.** Still stuck after Gates A/B (especially L4)? Spawn a
+subagent with a **fresh context** — it does not share your reasoning dead-ends. Give it exactly
+three inputs (LingXi advisor pattern): (1) the challenge description, (2) your latest decision,
+(3) the latest tool output. Ask for a ≤120-word verdict: what you are most likely missing, the
+single highest-signal next action, and what to stop doing. Cost is one LLM call; treat its answer
+as a hypothesis to test, not a solution.
+
+Then, if pivoting is still warranted:
+
 1. **Re-examine your assumptions** — is this really the category you think? A "web" challenge may need
    crypto for JWT forgery; a "forensics" PCAP may contain a pwn exploit to replay.
 2. **Try a second direction's decision layer** — many challenges span multiple categories.
 3. **Look for what you missed** — hidden files, alternate ports, response headers, source comments, image metadata.
 4. **Simplify** — if the exploit is too complex, check for a simpler path (default credentials, a known CVE, a logic bug).
 5. **Check edge cases** — off-by-one, race conditions, integer overflow, encoding mismatches.
+
+**Resume rule:** when picking a challenge back up (new session, after user steering), first write
+the attempt log — tried / failed-and-why / evidence / untried — and state "do NOT repeat what has
+already been tried" before acting (Rule 4 in `SKILL.md`).
 
 **Common multi-category patterns:**
 
