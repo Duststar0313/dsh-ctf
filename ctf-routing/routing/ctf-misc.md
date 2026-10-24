@@ -60,6 +60,7 @@ Out of scope: anything that fits web / pwn / reverse / forensics / crypto / malw
 - Malicious samples, C2, encrypted traffic → `ctf-malware`
 - Public-source intelligence and attribution → `ctf-osint`
 - Models, weights, adversarial examples, LLM/prompt injection → `ctf-ai-ml`
+- Blockchain/smart-contract challenges (even when platform-tagged as misc) → `ctf-web` → `web3.md`; on-chain/chain forensics → `ctf-forensics` → `blockchain.md`
 - Need to produce a writeup → `ctf-writeup`; direction still unclear → `ctf-routing/routing/triage.md`
 
 ## Maintenance

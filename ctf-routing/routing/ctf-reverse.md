@@ -28,7 +28,7 @@ Out of scope: the vulnerability is already clear and what remains is getting a s
 | `languages-platforms.md` | Platforms and frameworks: Roblox place files, Godot resource extraction, Rust serde_json schema recovery, Android JNI RegisterNatives obfuscation, DEX runtime bytecode patching (`/proc/self/maps`), native .so loading bypass, Frida bypassing Firebase Cloud Functions, Verilog/hardware RE, prefix hash inversion, Ruby/Perl polyglot constraint solving, Electron ASAR extraction, Node.js npm runtime introspection, React Native / Hermes (.hbc) | Target is a game/mobile/frontend framework artifact; RN/Hermes `.bundle`/`.hbc` |
 | `languages-compiled.md` | Compiled languages: Go (GoReSym, goroutines, memory layout, channels, embed.FS, UUID patching), Rust (demangle, Option/Result, Vec, panic strings), Swift (demangle, protocol witness table), Kotlin/JVM coroutine state machines, Haskell GHC CMM, C++ (vtable reconstruction, RTTI, STL patterns) | Target is a compiled language such as Go/Rust/Swift/C++ |
 | `platforms.md` | Platforms: macOS/iOS (Mach-O, code signing, ObjC runtime, Swift, dyld, jailbreak bypass), embedded/IoT firmware (binwalk, UART/JTAG/SPI, ARM/MIPS, RTOS), kernel drivers (Linux `.ko`, eBPF, Windows `.sys`), game engines (Unreal, Unity, anti-cheat, Lua), automotive CAN bus | Target is firmware/driver/mobile/game engine |
-| `platforms-hardware.md` | Hardware and architectures: HD44780 LCD controller GPIO reconstruction, advanced RISC-V (custom extensions, privileged mode, debugging), ARM64/AArch64 reversing and exploitation (calling conventions, ROP gadgets, qemu-aarch64-static) | There is a hardware, RISC-V, or ARM64 target |
+| `platforms-hardware.md` | Hardware and architectures: HD44780 LCD controller GPIO reconstruction, advanced RISC-V (custom extensions, privileged mode, debugging), ARM64/AArch64 reversing and exploitation (calling conventions, ROP gadgets, qemu-aarch64-static), TEE/enclave recognition (SGX/TrustZone) | There is a hardware, RISC-V, ARM64, or TEE/enclave (SGX/TrustZone) target |
 | `field-notes.md` | Quick reference: binary types, anti-debug bypass, specialized patterns, CTF case notes, AI/LLM-assisted RE workflow | After the target type is confirmed, when you need a broad quick reference (**read last**); AI/LLM-assisted RE for large/obfuscated binaries |
 
 ## Decision Tree
@@ -43,6 +43,7 @@ Out of scope: the vulnerability is already clear and what remains is getting a s
 
 - Want to bypass manual reversing → Frida hook `strcmp`/`memcmp`, or go straight to angr → `tools-dynamic.md`
 - Foreign architecture (MIPS/ARM/RISC-V) or excessive anti-debugging → Qiling emulation → `tools-emulation.md`; ARM64 details → `platforms-hardware.md`
+- TEE/enclave artifacts (SGX enclave binaries, TrustZone OP-TEE) → `platforms-hardware.md` (recognize first; exploit if reachable → pivot `ctf-pwn`, attestation/crypto → `ctf-crypto`)
 - Known file format → Python bytecode/WASM/APK/.NET/Roblox/Godot/Electron → `languages.md`, `languages-platforms.md`
 - Traces of a compiled language (Go symbols, Rust panic strings, Swift demangle, C++ vtable/RTTI) → `languages-compiled.md`
 - Custom VM, obfuscation, self-modifying code → `patterns.md`; opaque predicates/MBA simplification → `anti-analysis.md`
