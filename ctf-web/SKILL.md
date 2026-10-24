@@ -66,6 +66,7 @@ go install github.com/ffuf/ffuf/v2@latest
 - [field-notes.md](field-notes.md) - Long-form exploit notes: quick references for SQLi, XSS, LFI, JWT, SSTI, SSRF, command injection, XXE, deserialization, race conditions, auth bypass, and multi-stage chains
 - [python-requests.md](python-requests.md) - Python requests toolkit: session scaffold, Burp-Intruder-like fuzzer (sync + ThreadPoolExecutor + httpx async), payload deploy from pat-reference.md wordlists, header/param spray, cookie/JWT, proxy
 - [pat-reference.md](pat-reference.md) — PayloadsAllTheThings index: bulk payloads for XSS/SQLi/SSRF/SSTI/LFI/Command Injection/Upload (requires PAT clone, see Prerequisites)
+- [ai-agentic-web.md](ai-agentic-web.md) — LLM agent web attack surface: tool-argument injection, MCP abuse, browser-agent hijacking, agent memory/context poisoning, agent-as-SSRF, confused deputy tool privilege diffusion
 
 ## When to Pivot
 

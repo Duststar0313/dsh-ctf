@@ -33,6 +33,7 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 | `field-notes.md` | Long-accumulated quick-reference index: SQLi/XSS/LFI/JWT/SSTI/SSRF/command injection/XXE/deserialization/race conditions/auth bypass/multi-stage chains | Web is confirmed and you need a broad quick reference (**read last, largest file**) |
 | `python-requests.md` | Python Requests toolkit — "Burp Intruder in Python": Intruder-vs-Repeater workflow choice, Session scaffold, proxy/verify setup, concurrent brute force, encoding and error handling | You need high-volume or scripted request automation — fuzzing a parameter, brute-forcing a token, or replaying with variations — rather than clicking through a proxy |
 | `pat-reference.md` | PayloadsAllTheThings reference index: how to use it, plus a category map from a local technique to the corresponding PAT path | You know the class of bug and want the matching payload catalogue from PayloadsAllTheThings |
+| `ai-agentic-web.md` | Tool-argument injection, MCP tool abuse, browser-agent (WebVoyager-style) hijacking, agent memory/context poisoning, agent-as-SSRF, confused-deputy tool privilege diffusion | A chat/agent UI shows tool-call traces, the API lists `tool`/`action`/`mcp` endpoints, or a bot agent visits submitted URLs |
 
 ## Decision Tree
 
@@ -48,6 +49,7 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 - The backend is Node.js and input can reach object properties → `node-and-prototype.md`
 - The target contains smart contracts/RPC → `web3.md`
 - You only have a version number/banner → `cves.md`
+- An LLM agent is in play (chat UI with tool-call echo, MCP/JSON-RPC endpoints, a bot that visits my content) → `ai-agentic-web.md`
 - None of the above is clear and you need a broad quick reference → `field-notes.md`
 
 ## Common Entry Points
@@ -71,6 +73,7 @@ Out of scope: pure cryptographic primitives, native binary memory corruption, st
 - Need to reverse obfuscated JS/WASM/binary payloads → `ctf-reverse`
 - Analyzing logs, PCAP, web server forensics → `ctf-forensics`
 - Need to first gather intelligence from public sources (domains, people, social media) → `ctf-osint`
+- The "web" challenge is an LLM agent (tool calling, MCP, browser agent, persistent memory) — deep dive on the agentic endpoint itself: memory poisoning, MCP resource/tool abuse, multi-agent instruction smuggling, hallucinated tools → `ctf-ai-ml` `llm-attacks.md` (agentic/LLM endpoint attacks; load via the `skill` tool)
 
 ## Maintenance
 

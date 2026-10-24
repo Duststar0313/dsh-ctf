@@ -132,7 +132,7 @@ it is not provided by default.
 | direction | Contents | routing |
 |---|---|---|
 | `ctf-web` | HTTP apps, clients, authentication (22 files) | ✅ `routing/ctf-web.md` |
-| `ctf-pwn` | Binary exploitation (18 files) | ✅ `routing/ctf-pwn.md` |
+| `ctf-pwn` | Binary exploitation (20 files) | ✅ `routing/ctf-pwn.md` |
 | `ctf-reverse` | Reverse engineering (19 files) | ✅ `routing/ctf-reverse.md` |
 | `ctf-crypto` | Cryptography and mathematics (19 files) | ✅ `routing/ctf-crypto.md` |
 | `ctf-forensics` | Forensics, steganography, signals (16 files) | ✅ `routing/ctf-forensics.md` |

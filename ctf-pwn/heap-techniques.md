@@ -28,6 +28,8 @@ For FILE-structure (_IO_FILE) exploitation — fastbin stdout vtable hijack, _IO
 
 ## House of Apple 2 — FSOP for glibc 2.34+ (0xFun 2026)
 
+> ⚠️ **版本核查（Debian trixie 2.41-12 / sid 2.43-4 / experimental 2.44-3 实测）**：glibc 2.41（Ubuntu 25.04 / Debian 13 起）并**未**移除 `_IO_wfile_jumps`——官方 2.41/2.42 NEWS 无此条目，`nm -D` 在 2.41/2.43/2.44 均能查到 `_IO_wfile_jumps@@GLIBC_2.2.5`，**本链在 glibc 2.40~2.44 仍然可用**。真正要留意的是 glibc 2.43 起对整批内建 stdio 符号（含 `_IO_wfile_jumps`/`_IO_file_jumps`/`_IO_list_all`）的**弃用预告**：未来版本可能移除且**不提供 compat 符号**，届时本链将失效。**若目标环境 `nm -D libc.so.6 | grep wfile_jumps` 查不到该符号（极新 glibc 或加固已落地），本链不可用，改走 [heap-glibc-24x.md](heap-glibc-24x.md) 的替代路径（窄字符 `_IO_file_jumps` / `_IO_list_all` + exit flush / str 函数侧）。** 实操一律以目标 libc 符号实测为准。
+
 **When to use:** Modern glibc (2.34+) removed `__free_hook`/`__malloc_hook`. House of Apple 2 uses FSOP via `_IO_wfile_jumps`.
 
 **Full chain:** UAF → leak libc (unsorted bin fd/bk) → leak heap (safe-linking mangled NULL) → tcache poisoning to `_IO_list_all` → fake FILE → exit triggers shell.

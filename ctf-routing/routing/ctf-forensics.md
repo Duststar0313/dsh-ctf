@@ -27,6 +27,7 @@ Out of scope: open-source intelligence (go to `ctf-osint`); active exploitation 
 | `3d-printing.md` | 3D printing forensics (PrusaSlicer binary G-code, QOIF, heatshrink) | The carrier is a 3D printing file/G-code |
 | `blockchain.md` | Blockchain/EVM on-chain forensics: calldata decoding, storage slots, event logs, transaction trace/call replay, Bitcoin UTXO peel chain | The evidence is on-chain or includes a transaction hash/contract address |
 | `email.md` | Email/mailbox forensics: EML/MBOX/Maildir parsing, RFC 2047 encoded headers, attachment extraction, Outlook PST/OST | The artifact is an email message, mailbox or PST/OST file |
+| `ai-media-forensics.md` | AI-generated media forensics: image (ELA limitations, GAN/diffusion fingerprints, FFT/noise statistics, over-smoothing), audio (spectrogram smoothness, missing silences, TTS/vocoder artifacts), provenance (C2PA manifests via `c2patool`, latent watermarks, prompt/seed traceback from PNG tEXt chunks) | Image/audio/video is suspected AI-generated or a deepfake; "which one is AI"; need C2PA/watermark/provenance checks |
 
 ## Decision Tree
 
@@ -39,6 +40,7 @@ Out of scope: open-source intelligence (go to `ctf-osint`); active exploitation 
 - Image → `stego-image.md`
 - Audio/signal (FFT, DTMF, SSTV, spectrum) → `stego-advanced.md`
 - Video, or need frame accumulation/averaging/transform restoration → `stego-advanced-2.md`
+- Image/audio/video suspected AI-generated (deepfake, "which one is AI", C2PA/watermark checks) → `ai-media-forensics.md`; but if the goal is to reverse-search a (possibly AI-looking) image back to a real source, that is OSINT → `ctf-osint`
 - PDF / SVG / GIF / container / text steganography → `steganography.md`
 - Windows host artifacts (registry, SAM, USN, Amcache) → `windows.md`
 - Linux/application artifacts (logs, browser, Git, Docker, KeePass) → `linux-forensics.md`

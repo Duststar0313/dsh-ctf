@@ -29,7 +29,7 @@ Out of scope: the algorithm is embedded in a custom VM/obfuscated binary and the
 | `exotic-crypto.md` | Non-standard algebraic structures: braid group DH/Alexander polynomial, monotone function inversion, tropical semiring residuals, Paillier, Hamming-code spiral interleaving, ElGamal generic re-encryption, FPE Feistel brute force, icosahedral symmetry group cipher, Goldwasser-Micali duplication oracle | The cipher is built on an unfamiliar algebraic structure |
 | `exotic-crypto-2.md` | Non-standard structures part 2: BB-84 QKD MITM, ElGamal trivial DLP (B=p−1), Paillier LSB oracle (homomorphic doubling), differential privacy noise cancellation, homomorphic encryption bit extraction, matrix ElGamal via Jordan normal form, OSS signature forgery via Pollard, Cayley-Purser keyless decryption, BIP39 partial mnemonic checksum brute force, Asmuth-Bloom CRT threshold recovery, polynomial-prime Rabin, LCG period detection, Vandermonde coefficient recovery | Same as above, search by structural features |
 | `modern-ciphers-4.md` | Modern ciphers part 4: ChaCha20-Poly1305 nonce reuse (forbidden attack over 2^130−5, RFC 8439), partitioning-oracle / key-committing AEAD and ciphertext splitting via lattice, sponge-construction generality (SHA-3 / Keccak / Ascon / Gimli / Sparkle) with rate/capacity/rounds/pad table and endianness workflow, eSTREAM Trivium (1152-round warmup) and Grain cube-attack outline | AEAD nonce reuse, sponge/hash-construction generality, or a lightweight stream cipher (Trivium/Grain) |
-| `post-quantum.md` | Post-quantum recognition: Module-LWE / ML-KEM (Kyber) identification, flattening Module-LWE to plain LWE for a lattice attack, ML-DSA, and estimator usage | Parameters look like a PQC scheme (ML-KEM/ML-DSA) or a Module-LWE instance |
+| `post-quantum.md` | Post-quantum recognition **and attacks**: Module-LWE / ML-KEM (Kyber) identification, flattening Module-LWE to plain LWE, **ML-DSA (Dilithium) parameter table (q=8380417, gamma1/gamma2, c-tau, FIPS 204 sizes) with nonce-bias/HNP, message-flooding, verifier-bug forgery and fault-attack notes**, **SPHINCS+/SLH-DSA (FIPS 205) parameter/size table with one-time-key reuse and state-reset attack surface**, estimator usage | Parameters look like a PQC scheme — **a PQC signature challenge (ML-DSA / SPHINCS+) rather than a KEM**, or an ML-KEM/Module-LWE instance |
 
 ## Decision Tree
 
@@ -55,6 +55,7 @@ Out of scope: the algorithm is embedded in a custom VM/obfuscated binary and the
 - ZKP/circuits/secret sharing/commitments → `zkp-and-advanced.md`
 - PRNG state recoverable (MT19937, LCG, XorShift128+, time seed) → `prng.md`; variants → `prng-attacks.md`
 - You have decided "this needs a lattice" → `lattice-and-lwe.md`; a concrete tool such as LLL/BSGS/Coppersmith is needed → `advanced-math.md`
+- PQC-looking constants (`q=3329`/`8380417`, small `k/l` ranks, `FORS`/`WOTS`/`SPHINCS+` strings, tiny pk + huge signature) → `post-quantum.md` — for **signatures** (ML-DSA nonce/verifier bugs, SPHINCS+ one-time-key reuse) just as much as for KEM (ML-KEM)
 - The cipher is built on an unfamiliar algebraic structure (braid group, tropical semiring, matrix group, coding) → `exotic-crypto.md`, `exotic-crypto-2.md`
 - None of the above → look it up again using the algorithm's features: `grep` the keywords across the files above
 
